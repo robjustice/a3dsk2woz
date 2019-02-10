@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 	woz[8] = 1;							// INFO version: 1.
 	woz[9] = 1;							// Disk type: 5.25".
 	woz[10] = 0;						// Write protection: disabled.
-	woz[11] = 0;						// Cross-track synchronised image: no.
+	woz[11] = 1;						// Cross-track synchronised image: yes. //update this for Apple ///
 	woz[12] = 1;						// MC3470 fake bits have been removed: yes.
 										// (or, rather, were never inserted)
 															
@@ -120,10 +120,33 @@ int main(int argc, char *argv[]) {
 
 	// The output pointer holds a byte position into the WOZ buffer.
 	size_t output_pointer = 244;
+	
+	//setup some variables to rotate the tracks to align with
+	//the original Apple3 disk synchronised formatting
+	size_t rotate_size = 2950;      //rotate each track 2950 bytes
+	size_t rotate_position=0-rotate_size;   //initial position, track 0 is not shifted
+	uint8_t woztemp[6288]; //temp buffer
 
 	// Write out all 35 tracks.
 	for(size_t c = 0; c < 35; ++c) {
 		serialise_track(&woz[output_pointer], &dsk[c * 16 * 256], c, is_prodos);
+
+		//setup the position for the start of the track
+		rotate_position += rotate_size;  // add the rotate amount to the last position
+		if(rotate_position >= 6288) rotate_position = rotate_position - 6288; //wrap around if over the track length
+
+		//rotate it to temp buffer
+		for(size_t i = 0; i <6288; i++){
+			size_t source = output_pointer + i + rotate_position;
+			if(source >= output_pointer + 6288) source = source - 6288; //wrap around if over the track length
+			woztemp[i] = woz[source];
+		}
+
+		//now copy it back to the original buffer
+		for(size_t i = 0; i <6288; i++){
+    			woz[output_pointer+i] = woztemp[i];
+		}
+
 		output_pointer += 6656;
 	}
 #undef set_int32
@@ -365,6 +388,7 @@ static void encode_6_and_2(uint8_t *dest, const uint8_t *src) {
 */
 static void serialise_track(uint8_t *dest, const uint8_t *src, uint8_t track_number, bool is_prodos) {
 	size_t track_position = 0;	// This is the track position **in bits**.
+	uint8_t volume;
 	memset(dest, 0, 6646);
 
 	// Write gap 1.
@@ -383,11 +407,33 @@ static void serialise_track(uint8_t *dest, const uint8_t *src, uint8_t track_num
 		track_position = write_byte(dest, track_position, 0xaa);
 		track_position = write_byte(dest, track_position, 0x96);
 
+		// Add in the 'special' SOS protection volume numbers
+		//
+		// Apple /// protection key
+		// KEY $7C      ;track 16, sector 6
+		//     $BD      ;track 15, sector 10
+		//     $BD      ;track 14, sector 14
+		//     $9B      ;track 13, sector 2
+		//     $F3      ;track 12, sector 6
+		//     $E4      ;track 11, sector 10
+		//     $C1      ;track 10, sector 14
+		//     $B4      ;track  9, sector 2
+		// 
+		if ( track_number == 9 && sector == 2) volume = 0xB4;          
+		else if ( track_number == 10 && sector == 14) volume = 0xC1;     
+		else if ( track_number == 11 && sector == 10) volume = 0xE4;     
+		else if ( track_number == 12 && sector == 6) volume = 0xF3;      
+		else if ( track_number == 13 && sector == 2) volume = 0x9B;      
+		else if ( track_number == 14 && sector == 14) volume = 0xBD;     
+		else if ( track_number == 15 && sector == 10) volume = 0xBD;     
+		else if ( track_number == 16 && sector == 6) volume = 0x7C;      
+		else volume = 254;
+
 		// Volume, track, setor and checksum, all in 4-and-4 format.
-		track_position = write_4_and_4(dest, track_position, 254);
+		track_position = write_4_and_4(dest, track_position, volume);
 		track_position = write_4_and_4(dest, track_position, track_number);
 		track_position = write_4_and_4(dest, track_position, sector);
-		track_position = write_4_and_4(dest, track_position, 254 ^ track_number ^ sector);
+		track_position = write_4_and_4(dest, track_position, volume ^ track_number ^ sector);
 
 		// Epilogue.
 		track_position = write_byte(dest, track_position, 0xde);

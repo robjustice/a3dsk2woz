@@ -1,5 +1,6 @@
 # a3dsk2woz
-This is a modification of the original command-line tool dsk2woz by Tom Harte, that converts Apple II DSK images to WOZ format. It adds the volume numbers and track syncronisation to pass the SOS copy protection checks.
+This is a modification of the original command-line tool dsk2woz by Tom Harte, that converts Apple II DSK images to WOZ format.
+This version adds the volume numbers and track syncronisation needed to pass the SOS copy protection checks.
 
 Usage:
 

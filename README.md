@@ -1,16 +1,16 @@
-# dsk2woz
-A command-line tool to convert Apple II DSK images to WOZ format.
+# a3dsk2woz
+This is a modification of the original command-line tool dsk2woz by Tom Harte, that converts Apple II DSK images to WOZ format. It adds the volume numbers and track syncronisation to pass the SOS copy protection checks.
 
 Usage:
 
-    dsk2woz input.dsk output.woz
+    a3dsk2woz input.dsk output.woz
 
 Reads the contents of the disk `input.dsk` and outputs the WOZ-format file `output.woz`.
 
 ## Building
 There are no dependencies beyond the C standard library. So e.g.
 
-    cc dsk2woz.c -o dsk2woz
+    cc a3dsk2woz.c -o a3dsk2woz
 
 ## DOS 3.3 versus Pro-DOS
 Apple II DSK images contain implicitly-ordered sectors; the order depends on whether the image contains a DOS 3.3 image or a Pro-DOS image.

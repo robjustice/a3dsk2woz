@@ -11,7 +11,7 @@ static void serialise_track(uint8_t *dest, const uint8_t *src, uint8_t track_num
 int main(int argc, char *argv[]) {
 	// Announce failure if there are anything other than three arguments.
 	if(argc != 3) {
-		printf("USAGE: dsk2woz input.dsk output.woz\n");
+		printf("USAGE: a3dsk2woz input.dsk output.woz\n");
 		return -1;
 	}
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 															
 	// Append creator, which needs to be padded out to 32
 	// bytes with space characters.
-	const char creator[] = "dsk2woz 1.0";
+	const char creator[] = "a3dsk2woz 1.0";
 	const size_t creator_length = strlen(creator);
 	assert(creator_length < 32);
 
